@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Student Club Supporting Organizations</title>
+    <title>Houston Student Club Organizations</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- MapLibre CSS -->
@@ -64,9 +64,10 @@
 <script>
     const map = new maplibregl.Map({
         container: 'map',
-        style: 'https://demotiles.maplibre.org/style.json',
-        center: [-98.5795, 39.8283],
-        zoom: 4
+        // Open-source detailed street style
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [-95.3698, 29.7604], // Houston
+        zoom: 11
     });
 
     map.addControl(new maplibregl.NavigationControl());
@@ -75,7 +76,6 @@
         .then(response => response.json())
         .then(data => {
 
-            // Auto-zoom to bounds
             const bounds = new maplibregl.LngLatBounds();
 
             data.features.forEach(feature => {
@@ -85,7 +85,7 @@
                 const el = document.createElement('div');
                 el.className = 'pushpin';
 
-                const marker = new maplibregl.Marker(el)
+                new maplibregl.Marker(el)
                     .setLngLat(coordinates)
                     .addTo(map);
 
@@ -103,7 +103,7 @@
                 });
             });
 
-            map.fitBounds(bounds, { padding: 50 });
+            map.fitBounds(bounds, { padding: 60 });
 
         })
         .catch(error => {
