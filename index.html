@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Student Club Supporting Organizations Map</title>
+    <title>Student Club Supporting Organizations</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- MapLibre CSS -->
@@ -19,7 +19,7 @@
 
         #info-panel {
             width: 30%;
-            background: #f4f4f4;
+            background: #f8f9fa;
             padding: 20px;
             overflow-y: auto;
             border-right: 1px solid #ddd;
@@ -30,13 +30,23 @@
         }
 
         .organization-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             margin-bottom: 10px;
+            color: #c62828;
         }
 
         .organization-detail {
             margin-bottom: 8px;
+        }
+
+        .pushpin {
+            width: 30px;
+            height: 30px;
+            background-image: url("https://cdn-icons-png.flaticon.com/512/684/684908.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -44,67 +54,61 @@
 
 <div id="info-panel">
     <h2>Organization Information</h2>
-    <p>Click a pushpin on the map to view details.</p>
+    <p>Click a red pushpin to view details.</p>
 </div>
 
 <div id="map"></div>
 
-<!-- MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
     const map = new maplibregl.Map({
         container: 'map',
         style: 'https://demotiles.maplibre.org/style.json',
-        center: [-98.5795, 39.8283], // Default US center
+        center: [-98.5795, 39.8283],
         zoom: 4
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
-    map.on('load', () => {
-        // Load GeoJSON data
-        map.addSource('organizations', {
-            type: 'geojson',
-            data: 'map.geojson'
-        });
+    fetch('./map.geojson')
+        .then(response => response.json())
+        .then(data => {
 
-        // Add pushpin layer
-        map.addLayer({
-            id: 'organization-pins',
-            type: 'circle',
-            source: 'organizations',
-            paint: {
-                'circle-radius': 8,
-                'circle-color': '#007BFF',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-            }
-        });
+            // Auto-zoom to bounds
+            const bounds = new maplibregl.LngLatBounds();
 
-        // Click event
-        map.on('click', 'organization-pins', (e) => {
-            const properties = e.features[0].properties;
-            const panel = document.getElementById('info-panel');
+            data.features.forEach(feature => {
+                const coordinates = feature.geometry.coordinates;
+                bounds.extend(coordinates);
 
-            panel.innerHTML = `
-                <div class="organization-title">${properties.name || "Organization Name"}</div>
-                <div class="organization-detail"><strong>Description:</strong> ${properties.description || "N/A"}</div>
-                <div class="organization-detail"><strong>Website:</strong> ${properties.website ? `<a href="${properties.website}" target="_blank">${properties.website}</a>` : "N/A"}</div>
-                <div class="organization-detail"><strong>Email:</strong> ${properties.email || "N/A"}</div>
-                <div class="organization-detail"><strong>Phone:</strong> ${properties.phone || "N/A"}</div>
-            `;
-        });
+                const el = document.createElement('div');
+                el.className = 'pushpin';
 
-        // Change cursor on hover
-        map.on('mouseenter', 'organization-pins', () => {
-            map.getCanvas().style.cursor = 'pointer';
-        });
+                const marker = new maplibregl.Marker(el)
+                    .setLngLat(coordinates)
+                    .addTo(map);
 
-        map.on('mouseleave', 'organization-pins', () => {
-            map.getCanvas().style.cursor = '';
+                el.addEventListener('click', () => {
+                    const properties = feature.properties;
+                    const panel = document.getElementById('info-panel');
+
+                    panel.innerHTML = `
+                        <div class="organization-title">${properties.name || "Organization Name"}</div>
+                        <div class="organization-detail"><strong>Description:</strong> ${properties.description || "N/A"}</div>
+                        <div class="organization-detail"><strong>Website:</strong> ${properties.website ? `<a href="${properties.website}" target="_blank">${properties.website}</a>` : "N/A"}</div>
+                        <div class="organization-detail"><strong>Email:</strong> ${properties.email || "N/A"}</div>
+                        <div class="organization-detail"><strong>Phone:</strong> ${properties.phone || "N/A"}</div>
+                    `;
+                });
+            });
+
+            map.fitBounds(bounds, { padding: 50 });
+
+        })
+        .catch(error => {
+            console.error("Error loading GeoJSON:", error);
         });
-    });
 </script>
 
 </body>
