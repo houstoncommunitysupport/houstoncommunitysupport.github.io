@@ -70,60 +70,63 @@
 
     map.addControl(new maplibregl.NavigationControl());
 
-    fetch('./map.geojson')
-        .then(response => response.json())
-        .then(data => {
-
+        fetch(https://docs.google.com/spreadsheets/d/e/2PACX-1vSUi-G_4EephbuxmKU93bk-97C89uYLojKP_ScMWMONwC8WNd3R5MoB1FoRrtPuSUSu6gWPGfNmIwrb/pub?output=csv)
+          .then(response => response.text())
+          .then(csv => {
+        
+            const rows = csv.split('\n').slice(1); // skip header
             const bounds = new maplibregl.LngLatBounds();
-
-            data.features.forEach(feature => {
-
-                    const coordinates = feature.geometry.coordinates; 
-                    // Make sure your GeoJSON uses [long, lat] order
-                
-                    bounds.extend(coordinates);
-                
-                    const el = document.createElement('div');
-                    el.className = 'pushpin';
-                
-                    const marker = new maplibregl.Marker({
-                        element: el,
-                        anchor: 'bottom'
-                    })
-                    .setLngLat(coordinates)
-                    .addTo(map);
-                
-                    // Make sure clicks work properly
-                    el.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                    
-                        const properties = feature.properties;
-                        const panel = document.getElementById('info-panel');
-                    
-                        panel.innerHTML = `
-                            <div class="organization-title">
-                                ${properties.Name || "No Name Provided"}
-                            </div>
-                    
-                            <div class="organization-detail">
-                                <strong>Address:</strong><br>
-                                ${properties.Address || "Not Available"}
-                            </div>
-                    
-                            <div class="organization-detail">
-                                <strong>Email:</strong><br>
-                                ${properties.Email 
-                                    ? `<a href="mailto:${properties.Email}">${properties.Email}</a>` 
-                                    : "Not Available"}
-                            </div>
-                        `;
-                    });
-            
+        
+            rows.forEach(row => {
+                const columns = row.split(',');
+        
+                const Name = columns[0];
+                const Address = columns[1];
+                const Email = columns[2];
+                const Longitude = parseFloat(columns[3]);
+                const Latitude = parseFloat(columns[4]);
+        
+                if (!Longitude || !Latitude) return;
+        
+                const el = document.createElement('div');
+                el.className = 'pushpin';
+        
+                const marker = new maplibregl.Marker({
+                    element: el,
+                    anchor: 'bottom'
+                })
+                .setLngLat([Longitude, Latitude])
+                .addTo(map);
+        
+                bounds.extend([Longitude, Latitude]);
+        
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+        
+                    const panel = document.getElementById('info-panel');
+        
+                    panel.innerHTML = `
+                        <div class="organization-title">${Name}</div>
+        
+                        <div class="organization-detail">
+                            <strong>Address:</strong><br>
+                            ${Address}
+                        </div>
+        
+                        <div class="organization-detail">
+                            <strong>Email:</strong><br>
+                            <a href="mailto:${Email}">${Email}</a>
+                        </div>
+                    `;
                 });
-
+            });
+        
             map.fitBounds(bounds, { padding: 60 });
-
-        })
+        
+          })
+          .catch(error => {
+              console.error("Error loading sheet:", error);
+          });
         .catch(error => {
             console.error("Error loading GeoJSON:", error);
         });
