@@ -94,26 +94,26 @@
                     .addTo(map);
                 
                     // Make sure clicks work properly
-                    el.addEventListener('click', (e) => {
-                        e.stopPropagation();  // prevents map click interference
-                
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    
                         const properties = feature.properties;
                         const panel = document.getElementById('info-panel');
-                
+                    
                         panel.innerHTML = `
                             <div class="organization-title">
-                                ${properties.name || "No Name Provided"}
+                                ${properties.Name || "No Name Provided"}
                             </div>
-                
+                    
                             <div class="organization-detail">
                                 <strong>Address:</strong><br>
-                                ${properties.address || "Not Available"}
+                                ${properties.Address || "Not Available"}
                             </div>
-                
+                    
                             <div class="organization-detail">
                                 <strong>Email:</strong><br>
-                                ${properties.email 
-                                    ? `<a href="mailto:${properties.email}">${properties.email}</a>` 
+                                ${properties.Email 
+                                    ? `<a href="mailto:${properties.Email}">${properties.Email}</a>` 
                                     : "Not Available"}
                             </div>
                         `;
