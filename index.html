@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
     <style>
         body {
@@ -15,7 +17,6 @@
             height: 100vh;
             font-family: Arial, sans-serif;
         }
-
         #info-panel {
             width: 30%;
             background: #f8f9fa;
@@ -23,22 +24,18 @@
             overflow-y: auto;
             border-right: 1px solid #ddd;
         }
-
         #map {
             width: 70%;
         }
-
         .organization-title {
             font-size: 22px;
             font-weight: bold;
             margin-bottom: 10px;
             color: #c62828;
         }
-
         .organization-detail {
             margin-bottom: 10px;
         }
-
         .pushpin {
             width: 30px;
             height: 30px;
@@ -58,76 +55,65 @@
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
 <script>
-    const map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://tiles.openfreemap.org/styles/liberty',
-        center: [-95.3698, 29.7604], // Houston
-        zoom: 11
-    });
+const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: [-95.3698, 29.7604], // Houston
+    zoom: 11
+});
 
-    map.addControl(new maplibregl.NavigationControl());
+map.addControl(new maplibregl.NavigationControl());
 
-    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSUi-G_4EephbuxmKU93bk-97C89uYLojKP_ScMWMONwC8WNd3R5MoB1FoRrtPuSUSu6gWPGfNmIwrb/pub?output=csv')
-      .then(response => response.text())
-      .then(csv => {
-    
-        const rows = csv.split('\n').slice(1); // skip header
-        const bounds = new maplibregl.LngLatBounds();
-    
-        rows.forEach(row => {
-            const columns = row.split(',');
-    
-            const Name = columns[0];
-            const Address = columns[1];
-            const Email = columns[2];
-            const Longitude = parseFloat(columns[3]);
-            const Latitude = parseFloat(columns[4]);
-    
-            if (!Longitude || !Latitude) return;
-    
-            const el = document.createElement('div');
-            el.className = 'pushpin';
-    
-            const marker = new maplibregl.Marker({
-                element: el,
-                anchor: 'bottom'
-            })
-            .setLngLat([Longitude, Latitude])
-            .addTo(map);
-    
-            bounds.extend([Longitude, Latitude]);
-    
-            el.addEventListener('click', function(e) {
-                e.stopPropagation();
-    
-                const panel = document.getElementById('info-panel');
-    
-                panel.innerHTML = `
-                    <div class="organization-title">${Name}</div>
-    
-                    <div class="organization-detail">
-                        <strong>Address:</strong><br>
-                        ${Address}
-                    </div>
-    
-                    <div class="organization-detail">
-                        <strong>Email:</strong><br>
-                        <a href="mailto:${Email}">${Email}</a>
-                    </div>
-                `;
+// CSV URL
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUi-G_4EephbuxmKU93bk-97C89uYLojKP_ScMWMONwC8WNd3R5MoB1FoRrtPuSUSu6gWPGfNmIwrb/pub?output=csv';
+
+fetch(csvUrl)
+  .then(response => response.text())
+  .then(csv => {
+    Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const rows = results.data;
+            const bounds = new maplibregl.LngLatBounds();
+
+            rows.forEach(row => {
+                const Name = row.Name;
+                const Address = row.Address;
+                const Email = row.Email;
+                const Longitude = parseFloat(row.Longitude);
+                const Latitude = parseFloat(row.Latitude);
+
+                if (isNaN(Longitude) || isNaN(Latitude)) return;
+
+                const el = document.createElement('div');
+                el.className = 'pushpin';
+
+                const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+                    .setLngLat([Longitude, Latitude])
+                    .addTo(map);
+
+                bounds.extend([Longitude, Latitude]);
+
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const panel = document.getElementById('info-panel');
+                    panel.innerHTML = `
+                        <div class="organization-title">${Name}</div>
+                        <div class="organization-detail"><strong>Address:</strong><br>${Address}</div>
+                        <div class="organization-detail"><strong>Email:</strong><br><a href="mailto:${Email}">${Email}</a></div>
+                    `;
+                });
             });
-        });
-    
-        map.fitBounds(bounds, { padding: 60 });
-    
-      })
-      .catch(error => {
-          console.error("Error loading sheet:", error);
-      });
 
+            map.fitBounds(bounds, { padding: 60 });
+        }
+    });
+  })
+  .catch(error => {
+      console.error("Error loading sheet:", error);
+  });
 </script>
 
 </body>
