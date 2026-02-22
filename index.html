@@ -78,35 +78,46 @@
 
             data.features.forEach(feature => {
 
-                const coordinates = feature.geometry.coordinates;
-                bounds.extend(coordinates);
-
-                const el = document.createElement('div');
-                el.className = 'pushpin';
-
-                new maplibregl.Marker(el)
+                    const coordinates = feature.geometry.coordinates; 
+                    // Make sure your GeoJSON uses [long, lat] order
+                
+                    bounds.extend(coordinates);
+                
+                    const el = document.createElement('div');
+                    el.className = 'pushpin';
+                
+                    const marker = new maplibregl.Marker({
+                        element: el,
+                        anchor: 'bottom'
+                    })
                     .setLngLat(coordinates)
                     .addTo(map);
-
-                el.addEventListener('click', () => {
-                    const properties = feature.properties;
-                    const panel = document.getElementById('info-panel');
-
-                    panel.innerHTML = `
-                        <div class="organization-title">${properties.name || "No Name Provided"}</div>
-                        
-                        <div class="organization-detail">
-                            <strong>Address:</strong><br>
-                            ${properties.address || "Not Available"}
-                        </div>
-
-                        <div class="organization-detail">
-                            <strong>Email:</strong><br>
-                            ${properties.email ? 
-                                `<a href="mailto:${properties.email}">${properties.email}</a>` 
-                                : "Not Available"}
-                        </div>
-                    `;
+                
+                    // Make sure clicks work properly
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();  // prevents map click interference
+                
+                        const properties = feature.properties;
+                        const panel = document.getElementById('info-panel');
+                
+                        panel.innerHTML = `
+                            <div class="organization-title">
+                                ${properties.name || "No Name Provided"}
+                            </div>
+                
+                            <div class="organization-detail">
+                                <strong>Address:</strong><br>
+                                ${properties.address || "Not Available"}
+                            </div>
+                
+                            <div class="organization-detail">
+                                <strong>Email:</strong><br>
+                                ${properties.email 
+                                    ? `<a href="mailto:${properties.email}">${properties.email}</a>` 
+                                    : "Not Available"}
+                            </div>
+                        `;
+                    });
                 });
             });
 
